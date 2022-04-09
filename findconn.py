@@ -3,11 +3,17 @@ import re
 
 
 def search(path: str) -> list:
+    regex = re.compile(r'mysql://((?!\.\.).)*?/[A-Za-z]([^\s]+)')
+    connections_list = []
     file = open(path, 'r')
 
     for line in file:
-        pass
+        match = regex.finditer(line)
+        for sqlString in match:
+            connections_list.append(sqlString.group(0))
+    connections_list.sort()
 
+    return connections_list
 
 
 def main():
@@ -16,7 +22,9 @@ def main():
         sys.exit(1)
 
     path = sys.argv[1]
-    search(path)
+    connections_list = search(path)
+    for connection in connections_list:
+        print(connection)
 
 
 if __name__ == '__main__':
