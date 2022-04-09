@@ -1,10 +1,12 @@
-import sys
-import re
+import sys      # for argv
+import re       # for regex
+import ctypes   # for readblah
 
 
 def search(path: str) -> list:
-    # Create re object using the specified regex below.
+    read_blah = ctypes.cdll.LoadLibrary("./readblah.so")
 
+    # Create re object using the specified regex below.
     regex = re.compile(r'mysql://'           # Beginning of connection string will always start with mysql://
                        
                        r'((?!\.\.).)*?/'     # Use a negative look ahead (?!) to exclude double periods but accept any 
@@ -17,10 +19,13 @@ def search(path: str) -> list:
                                              # letters, digits, and underscores. This regex matches anything that comes
                                              # after the server name or port starting with a letter until the first
                                              # whitespace ([^\s]+).
-
+    path_extension = path[path.find(".") + 1:]
+    print(path_extension)
     connections_list = []
     file = open(path, 'r')
 
+    # Parse through opened file for matching regex.
+    # For each match, add the connection string to the list.
     for line in file:
         match = regex.finditer(line)
         for sqlString in match:
@@ -37,6 +42,7 @@ def main():
 
     path = sys.argv[1]
     connections_list = search(path)
+
     for connection in connections_list:
         print(connection)
 
