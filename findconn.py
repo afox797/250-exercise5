@@ -1,10 +1,15 @@
+import os       # for directory traversal
 import sys      # for argv
 import re       # for regex
-import ctypes   # for readblah
+import ctypes   # for readblah shared library
 
 
 def search(path: str) -> list:
-    read_blah = ctypes.cdll.LoadLibrary("./readblah.so")
+    output_list = []
+    blah_lib = ctypes.cdll.LoadLibrary("./readblah.so")
+
+    # specify the return value of the read_blah function explicitly, so it doesn't return int
+    blah_lib.read_blah.restype = ctypes.c_char_p
 
     # Create re object using the specified regex below.
     regex = re.compile(r'mysql://'           # Beginning of connection string will always start with mysql://
@@ -19,20 +24,37 @@ def search(path: str) -> list:
                                              # letters, digits, and underscores. This regex matches anything that comes
                                              # after the server name or port starting with a letter until the first
                                              # whitespace ([^\s]+).
-    path_extension = path[path.find(".") + 1:]
-    print(path_extension)
-    connections_list = []
-    file = open(path, 'r')
+    files = os.listdir(path)
+    os.chdir(path)
 
-    # Parse through opened file for matching regex.
-    # For each match, add the connection string to the list.
-    for line in file:
-        match = regex.finditer(line)
-        for sqlString in match:
-            connections_list.append(sqlString.group(0))
-    connections_list.sort()
+    for file in files:
+        path_extension = file[file.find(".") + 1:]
 
-    return connections_list
+        if path_extension == "txt":
+            current_file = open(file, 'r')
+
+            # Parse through opened file for matching regex.
+            # For each match, add the connection string to the list.
+            for line in current_file:
+                match = regex.finditer(line)
+                for sqlString in match:
+                    output_list.append(sqlString.group(0))
+
+            current_file.close()
+
+        elif path_extension == "blah":
+            opened_file = blah_lib.open_blah((file.encode()))
+            output = blah_lib.read_blah(opened_file)
+
+            print("Printing contents of blah file:")
+            # Parse through and print value fromm blah file.
+            while output is not None:
+                print(output.decode())
+                output = blah_lib.read_blah(opened_file)
+
+            blah_lib.close_blah(opened_file)
+
+    return output_list
 
 
 def main():
@@ -41,10 +63,12 @@ def main():
         sys.exit(1)
 
     path = sys.argv[1]
-    connections_list = search(path)
+    search_output = search(path)
+    search_output.sort()
 
-    for connection in connections_list:
-        print(connection)
+    print("Printing sorted regex matches:")
+    for entry in search_output:
+        print(entry)
 
 
 if __name__ == '__main__':
